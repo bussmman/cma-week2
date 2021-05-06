@@ -16,6 +16,7 @@ wildschwein_BE = read_delim("wildschwein_BE_2056.csv",",")
 wildschwein_BE = st_as_sf(wildschwein_BE, coords = c("E", "N"), crs = 2056, remove = FALSE)
 
 ## Calculate the time difference between measurements
+wildschwein_BE = group_by(wildschwein_BE, TierID)
 wildschwein_BE$timelag = as.integer(difftime(lead(wildschwein_BE$DatetimeUTC),wildschwein_BE$DatetimeUTC,units = "secs"))
 
 # How many Indivuiduals were tracked? Three!
@@ -30,13 +31,14 @@ Tier3 = wildschwein_BE[wildschwein_BE$TierID == "018A",]
 l3 = sum(Tier3$timelag[1:length(Tier3$timelag)-1])/(60*60*24)
 
 # Are there gaps? Yes, there are times, where the sampling
-# intervall deviates significantly from 15 min!
-plot(Tier1, ylim=c(0,10000))
-plot(Tier2, ylim=c(0,10000))
-plot(Tier3, ylim=c(0,10000))
+# intervall is significantly higher than 15 min!
+plot(Tier1$timelag, ylim=c(0,10000))
+plot(Tier2$timelag, ylim=c(0,10000))
+plot(Tier3$timelag, ylim=c(0,10000))
 
 # Were all individuals tracked concurrently or sequentially?
 # The trackings overlap, but are not of the same duration!
+# Two have the same starting point, two the same ending point!
 tr1 = c(Tier1$DatetimeUTC[1],Tier1$DatetimeUTC[length(Tier1$TierID)])
 tr2 = c(Tier2$DatetimeUTC[1],Tier2$DatetimeUTC[length(Tier2$TierID)])
 tr3 = c(Tier3$DatetimeUTC[1],Tier3$DatetimeUTC[length(Tier3$TierID)])
@@ -48,7 +50,16 @@ quantile(wildschwein_BE$timelag, 0.5, na.rm=TRUE)   # 15min 3s
 quantile(wildschwein_BE$timelag, 0.75, na.rm=TRUE)  # 15min 16s
 quantile(wildschwein_BE$timelag, 0.99, na.rm=TRUE)  # 180min 7s
 
+## Calculate the wild boar's steplengths
+wildschwein_BE$steplength = sqrt(
+  (wildschwein_BE$E-lead(wildschwein_BE$E))^2 + 
+  (wildschwein_BE$N-lead(wildschwein_BE$N))^2
+)
+
+## Using the timelag and the steplength calculate the wild boar's
+## Speed
+wildschwein_BE$speed = wildschwein_BE$steplength/wildschwein_BE$timelag
+
+# What speed unit do you get? Meters per second!
+
 ## 
-
-
-
