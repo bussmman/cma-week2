@@ -9,6 +9,7 @@ library(ggplot2)      # to visualize data
 library(sf)           # to handle spatial vector data
 library(terra)        # To handle raster data
 library(lubridate)    # To handle dates and times
+library(zoo)          # To smoothen using moving window functions
 
 ## Import the downloaded csv
 wildschwein_BE = read_delim("wildschwein_BE_2056.csv",",")
@@ -119,8 +120,23 @@ ggplot(caro_merged, aes(x=DatetimeUTC, y=speed, group=ID)) +
   geom_line(aes(color=ID))
 
 # What do the different lines for the different granularities tell
-# you? --> the larger the intervall, the more the speed is smoothened,
+# you? --> the larger the interval, the more the speed is smoothened,
 # meaning that short sprints of the boar cannot be detected, but are
-# averaged out!
+# averaged out. The trajectories are more direct for larger intervals
+# and omit little "detours"!
 
-## 
+## Smoothen the caro speed with rollmean (different window sizes)
+caro$speed5 = rep(0,200)
+caro$speed5[3:198] = rollmean(caro$speed, k=5)        # 5
+caro$speed10 = rep(0,200)
+caro$speed10[6:196] = rollmean(caro$speed, k=10)      # 10
+caro$speed20 = rep(0,200)
+caro$speed20[11:191] = rollmean(caro$speed, k=20)     # 20
+
+## Plot the smoothened caro speed data
+x = cbind(1:200,1:200,1:200,1:200)
+y = cbind(caro$speed,caro$speed5,caro$speed10,caro$speed20)
+matplot(x,y, type="l")
+
+# The larger the k, the smoother the speed function (similar to the
+# subsetting interval as seen in the task before)
