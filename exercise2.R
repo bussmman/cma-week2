@@ -62,4 +62,65 @@ wildschwein_BE$speed = wildschwein_BE$steplength/wildschwein_BE$timelag
 
 # What speed unit do you get? Meters per second!
 
+## Import the "caro" data
+caro = read_delim("caro60.csv",",")
+#caro = st_as_sf(caro, coords = c("E", "N"), crs = 2056, remove = FALSE)
+
+## Subset the caro data by different intervalls
+caro3 = caro[seq(1,length(caro$TierID),3),]       # 3
+caro6 = caro[seq(1,length(caro$TierID),6),]       # 6
+caro9 = caro[seq(1,length(caro$TierID),9),]       # 9
+
+## Calculate timelag for the 4 data sets
+caro$timelag = as.integer(difftime(lead(caro$DatetimeUTC),caro$DatetimeUTC,units = "secs"))
+caro3$timelag = as.integer(difftime(lead(caro3$DatetimeUTC),caro3$DatetimeUTC,units = "secs"))
+caro6$timelag = as.integer(difftime(lead(caro6$DatetimeUTC),caro6$DatetimeUTC,units = "secs"))
+caro9$timelag = as.integer(difftime(lead(caro9$DatetimeUTC),caro9$DatetimeUTC,units = "secs"))
+
+## Calculate steplength for the 4 data sets
+caro$steplength = sqrt(
+  (caro$E-lead(caro$E))^2 + (caro$N-lead(caro$N))^2
+)
+
+caro3$steplength = sqrt(
+  (caro3$E-lead(caro3$E))^2 + (caro3$N-lead(caro3$N))^2
+)
+
+caro6$steplength = sqrt(
+  (caro6$E-lead(caro6$E))^2 + (caro6$N-lead(caro6$N))^2
+)
+
+caro9$steplength = sqrt(
+  (caro9$E-lead(caro9$E))^2 + (caro9$N-lead(caro9$N))^2
+)
+
+## Calculate speed for the 4 data sets
+caro$speed = caro$steplength/caro$timelag
+caro3$speed = caro3$steplength/caro3$timelag
+caro6$speed = caro6$steplength/caro6$timelag
+caro9$speed = caro9$steplength/caro9$timelag
+
+## Define identifiers to group the 4 different data sets
+caro$ID = "1"
+caro3$ID = "3"
+caro6$ID = "6"
+caro9$ID = "9"
+
+## Merge the 4 different data sets
+caro_merged = rbind(caro, caro3, caro6, caro9)
+
+## Plot the 4 different trajectories
+ggplot(caro_merged, aes(x=E, y=N, group=ID)) +
+  geom_path(aes(color=ID)) +
+  geom_point(aes(color=ID))
+
+## Plot the 4 different speeds
+ggplot(caro_merged, aes(x=DatetimeUTC, y=speed, group=ID)) +
+  geom_line(aes(color=ID))
+
+# What do the different lines for the different granularities tell
+# you? --> the larger the intervall, the more the speed is smoothened,
+# meaning that short sprints of the boar cannot be detected, but are
+# averaged out!
+
 ## 
